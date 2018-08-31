@@ -10,6 +10,15 @@ def change_fleet_direction(ai_settings, aliens):
         alien.rect.y += ai_settings.fleet_drop_speed
     ai_settings.fleet_direction *= -1
 
+def check_aliens_bottom(ai_settings, stats, screen, ship, aliens, bullets):
+    #检查是否有外星人到达了屏幕底端
+    screen_rect = screen.get_rect()
+    for alien in aliens.sprites():
+        if alien.rect.bottom >= screen_rect.bottom:
+            #像飞船被撞到一样处理
+            ship_hit(ai_settings, stats, screen, ship, aliens, bullets)
+            break
+
 def check_bullet_alien_collisions(ai_settings, screen, ship, aliens, bullets):
     #检查是否有子弹击中了外星人，如果是这样，就删除相应的子弹和外星人
     collisions = pygame.sprite.groupcollide(bullets, aliens, True, True)
@@ -99,20 +108,22 @@ def get_number_rows(ai_settings, ship_height, alien_height):
 
 def ship_hit(ai_settings, stats, screen, ship, aliens, bullets):
     #响应被外星人撞到的飞船
-    #将ship_left减1
-    stats.ships_left -= 1
+    if stats.ships_left > 1:
+        #将ship_left减1
+        stats.ships_left -= 1
 
-    #清空外星人列表和子弹列表
-    aliens.empty()
-    bullets.empty()
+        #清空外星人列表和子弹列表
+        aliens.empty()
+        bullets.empty()
 
-    #创建一群新的外星人， 并将飞船放到屏幕底端中央
-    create_fleet(ai_settings, screen, ship, aliens)
-    ship.center_ship()
+        #创建一群新的外星人， 并将飞船放到屏幕底端中央
+        create_fleet(ai_settings, screen, ship, aliens)
+        ship.center_ship()
 
-    #pause
-    sleep(0.5)
-
+        #pause
+        sleep(0.5)
+    else:
+        stats.game_active = False
 def update_aliens(ai_settings, stats, screen, ship, aliens, bullets):
     #检查是否有外星人位于屏幕边缘，并更新整群外星人位置
     check_fleet_edges(ai_settings, aliens)
@@ -120,7 +131,10 @@ def update_aliens(ai_settings, stats, screen, ship, aliens, bullets):
 
     #检测外星人和飞船之间的碰撞
     if pygame.sprite.spritecollideany(ship, aliens):
-        print(ai_settings, stats, screen, ship, aliens, bullets)
+        ship_hit(ai_settings, stats, screen, ship, aliens, bullets)
+
+    #检查是否有外星人到达屏幕底端
+    check_aliens_bottom(ai_settings, stats, screen, ship, aliens, bullets)
 
 def update_bullets(ai_settings, screen, ship, aliens, bullets):
     bullets.update()
